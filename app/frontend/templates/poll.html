@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ poll.title }}{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('home') }}">← All polls</a>
+<section class="poll-detail">
+  <div class="poll-detail-head">
+    <span class="status-pill {% if poll.is_open %}status-open{% elif poll.is_upcoming %}status-soon{% else %}status-closed{% endif %}">{% if poll.is_open %}Open now{% elif poll.is_upcoming %}Coming soon{% else %}Closed{% endif %}</span>
+    <span class="poll-meta">🗳️ {{ poll.total_votes }} {{ 'vote' if poll.total_votes == 1 else 'votes' }}</span>
+  </div>
+  <h1>{{ poll.title }}</h1>
+  {% if poll.description %}<p class="poll-description">{{ poll.description }}</p>{% endif %}
+
+  {% if poll.show_results %}
+    <h2 class="subheading">{% if poll.user_vote %}Thanks for voting! 🎉{% else %}Here’s how everyone voted{% endif %}</h2>
+    <div class="results-list">
+      {% for option in poll.options %}
+        <div class="result-row {% if poll.user_vote == option.option_id %}result-yours{% endif %}">
+          <div class="result-label"><span>{{ option.label }}{% if poll.user_vote == option.option_id %} <span class="your-choice">Your choice</span>{% endif %}</span><strong>{{ option.percentage }}%</strong></div>
+          <div class="progress-track"><div class="progress-fill" style="width: {{ option.percentage }}%"></div></div>
+          <span class="result-votes">{{ option.votes }} {{ 'vote' if option.votes == 1 else 'votes' }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% elif can_vote %}
+    <form class="vote-form" method="post" action="{{ url_for('vote', poll_id=poll.poll_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <fieldset>
+        <legend class="subheading">Choose your favorite</legend>
+        <div class="choice-list">
+          {% for option in poll.options %}
+            <label class="choice-card"><input type="radio" name="option_id" value="{{ option.option_id }}" required><span class="choice-indicator"></span><span>{{ option.label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <button class="button button-wide vote-button" type="submit">Cast my vote <span aria-hidden="true">✨</span></button>
+    </form>
+  {% else %}
+    <h2 class="subheading">The choices</h2>
+    <div class="choice-list choice-list-static">
+      {% for option in poll.options %}<div class="choice-card"><span class="choice-indicator"></span><span>{{ option.label }}</span></div>{% endfor %}
+    </div>
+    {% if poll.is_upcoming %}<p class="notice">This poll hasn’t opened yet. Come back soon! 🌱</p>
+    {% elif not session.get('user_id') %}<p class="notice">Log in to add your voice. <a href="{{ url_for('login', next=request.path) }}">Log in</a></p>
+    {% elif poll.user_vote %}<p class="notice">You’ve already voted here. Thank you! 💛</p>
+    {% else %}<p class="notice">Voting is closed for this poll. Thanks for stopping by! 🌙</p>{% endif %}
+  {% endif %}
+  <p class="poll-dates">Voting window: {{ poll.start_date.strftime('%b %-d, %Y at %-I:%M %p') }} – {{ poll.end_date.strftime('%b %-d, %Y at %-I:%M %p') }}</p>
+</section>
+{% endblock %}

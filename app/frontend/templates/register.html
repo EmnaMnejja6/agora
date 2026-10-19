@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Join the agora{% endblock %}
+{% block content %}
+<section class="form-wrap">
+  <div class="form-intro"><span class="form-emoji">🌷</span><span class="eyebrow">You belong here</span><h1>Join the agora</h1><p>One small account, lots of good conversations.</p></div>
+  <form class="form-card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="username">Username</label>
+    <input id="username" name="username" autocomplete="username" minlength="3" maxlength="50" required>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+    <label for="password">Password <span class="label-hint">8+ characters</span></label>
+    <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+    <button class="button button-wide" type="submit">Create my account <span aria-hidden="true">→</span></button>
+    <p class="form-note">Already a member? <a href="{{ url_for('login') }}">Log in</a></p>
+  </form>
+</section>
+{% endblock %}

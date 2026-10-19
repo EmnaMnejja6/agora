@@ -1,0 +1,18 @@
+# Vagrant
+.vagrant/
+*.log
+
+# Ansible
+*.retry
+.vault_pass*
+vault_pass*
+
+# Secrets
+*.pem
+*.key
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

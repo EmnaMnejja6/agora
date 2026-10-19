@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Little questions, big ideas{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">A little space to be heard</span>
+    <h1>Good things happen<br>when we <span class="text-highlight">choose together.</span></h1>
+    <p>Pick a poll, share your thoughts, and see what everyone thinks.</p>
+    {% if not session.get('user_id') %}<a class="button" href="{{ url_for('register') }}">Come on in <span aria-hidden="true">→</span></a>{% endif %}
+  </div>
+  <div class="hero-art" aria-hidden="true"><span class="hero-sparkle sparkle-one">✦</span><span class="hero-emoji">🗳️</span><span class="hero-sparkle sparkle-two">✿</span></div>
+</section>
+
+<section class="section-heading">
+  <div><span class="eyebrow">The agora</span><h2>What are we deciding?</h2></div>
+  <span class="poll-count">{{ polls|length }} {{ 'poll' if polls|length == 1 else 'polls' }}</span>
+</section>
+
+{% if polls %}
+  <div class="poll-grid">
+    {% for poll in polls %}
+      <a class="poll-card" href="{{ url_for('poll_detail', poll_id=poll.poll_id) }}">
+        <div class="card-topline"><span class="status-pill {% if poll.is_open %}status-open{% elif poll.is_upcoming %}status-soon{% else %}status-closed{% endif %}">{% if poll.is_open %}Open now{% elif poll.is_upcoming %}Coming soon{% else %}Closed{% endif %}</span><span class="card-flower">✿</span></div>
+        <h3>{{ poll.title }}</h3>
+        <p>{{ poll.description or 'A little question for the community.' }}</p>
+        <div class="card-footer"><span>🗳️ {{ poll.total_votes }} {{ 'vote' if poll.total_votes == 1 else 'votes' }}</span><span class="card-arrow">View poll →</span></div>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="empty-state"><span class="empty-emoji">🌱</span><h3>It’s quiet in here… for now.</h3><p>Check back soon for the first community poll!</p></section>
+{% endif %}
+{% endblock %}

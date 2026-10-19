@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Welcome back{% endblock %}
+{% block content %}
+<section class="form-wrap">
+  <div class="form-intro"><span class="form-emoji">🌙</span><span class="eyebrow">Nice to see you</span><h1>Welcome back!</h1><p>Your little corner of the agora is waiting.</p></div>
+  <form class="form-card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <label for="identity">Username or email</label>
+    <input id="identity" name="identity" autocomplete="username" required autofocus>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button class="button button-wide" type="submit">Log in <span aria-hidden="true">→</span></button>
+    <p class="form-note">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+  </form>
+</section>
+{% endblock %}

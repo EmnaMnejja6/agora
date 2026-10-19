@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Poll studio{% endblock %}
+{% block content %}
+<section class="admin-intro"><span class="eyebrow">Behind the scenes</span><h1>Poll studio <span aria-hidden="true">🪄</span></h1><p>Make a little question, invite everyone in.</p></section>
+<div class="admin-layout">
+  <section class="admin-panel">
+    <div class="panel-heading"><span class="panel-emoji">✏️</span><div><h2>Create a poll</h2><p>At least two choices, and you’re off!</p></div></div>
+    <form class="admin-form" method="post" action="{{ url_for('create_poll') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="title">Poll title</label>
+      <input id="title" name="title" maxlength="160" placeholder="What should we... ?" required>
+      <label for="description">A little more detail <span class="label-hint">optional</span></label>
+      <textarea id="description" name="description" rows="3" maxlength="5000" placeholder="Add a bit of context..."></textarea>
+      <div class="date-fields">
+        <div><label for="start_date">Opens</label><input id="start_date" name="start_date" type="datetime-local" value="{{ now }}" required></div>
+        <div><label for="end_date">Closes</label><input id="end_date" name="end_date" type="datetime-local" value="{{ default_end }}" required></div>
+      </div>
+      <label>Choices</label>
+      <div id="option-fields" class="option-fields">
+        <input name="options" maxlength="160" placeholder="Choice one" required>
+        <input name="options" maxlength="160" placeholder="Choice two" required>
+      </div>
+      <button class="text-button" type="button" id="add-option">＋ Add another choice</button>
+      <button class="button button-wide" type="submit">Create poll <span aria-hidden="true">🌈</span></button>
+    </form>
+  </section>
+
+  <section class="admin-panel existing-polls">
+    <div class="panel-heading"><span class="panel-emoji">📋</span><div><h2>Your polls</h2><p>{{ polls|length }} {{ 'poll' if polls|length == 1 else 'polls' }} in the agora</p></div></div>
+    {% if polls %}<div class="admin-poll-list">
+      {% for poll in polls %}
+        <div class="admin-poll-row">
+          <div><a class="admin-poll-title" href="{{ url_for('poll_detail', poll_id=poll.poll_id) }}">{{ poll.title }}</a><span class="admin-poll-meta">{{ poll.total_votes }} votes · {% if poll.is_open %}open{% elif poll.is_upcoming %}upcoming{% else %}closed{% endif %}</span></div>
+          {% if poll.can_close %}<form method="post" action="{{ url_for('close_poll', poll_id=poll.poll_id) }}" onsubmit="return confirm('Close this poll now?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="close-button" type="submit">Close</button></form>{% else %}<span class="closed-mark">🌙</span>{% endif %}
+        </div>
+      {% endfor %}
+    </div>{% else %}<p class="admin-empty">Your first poll is just one little question away. ✨</p>{% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('add-option').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.name = 'options';
+    input.maxLength = 160;
+    input.placeholder = `Choice ${document.querySelectorAll('#option-fields input').length + 1}`;
+    document.getElementById('option-fields').append(input);
+    input.focus();
+  });
+</script>
+{% endblock %}
