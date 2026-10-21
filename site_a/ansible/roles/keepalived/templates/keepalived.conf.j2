@@ -1,0 +1,36 @@
+global_defs {
+    enable_script_security
+    script_user root
+}
+
+vrrp_script chk_haproxy {
+    script "/usr/bin/pidof haproxy"
+    interval 2
+    weight -20
+}
+
+vrrp_instance VI_1 {
+    state {{ ha_vrrp[inventory_hostname].state }}
+    interface {{ lan_interface }}
+    virtual_router_id {{ vrrp_router_id }}
+    priority {{ ha_vrrp[inventory_hostname].priority }}
+    advert_int 1
+
+    unicast_src_ip {{ node_ip }}
+    unicast_peer {
+        {{ ha_vrrp[inventory_hostname].peer }}
+    }
+
+    authentication {
+        auth_type PASS
+        auth_pass {{ vrrp_password }}
+    }
+
+    virtual_ipaddress {
+        {{ vip }}/{{ vip_prefix }}
+    }
+
+    track_script {
+        chk_haproxy
+    }
+}
