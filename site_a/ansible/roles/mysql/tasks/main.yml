@@ -1,0 +1,118 @@
+# --- Official MySQL APT Repository & Installation ---
+- name: Install APT prerequisite packages
+  ansible.builtin.apt:
+    name:
+      - debconf
+      - gnupg
+      - lsb-release
+      - curl
+    state: present
+    update_cache: true
+
+- name: Pre-seed debconf for mysql-apt-config
+  ansible.builtin.debconf:
+    name: mysql-apt-config
+    question: "{{ item.question }}"
+    vtype: "{{ item.vtype }}"
+    value: "{{ item.value }}"
+  loop:
+    - { question: 'mysql-apt-config/select-server', vtype: 'select', value: 'mysql-8.0' }
+
+- name: Download MySQL APT config deb package
+  ansible.builtin.get_url:
+    url: "{{ mysql_apt_config_url }}"
+    dest: /tmp/mysql-apt-config.deb
+    mode: '0644'
+
+- name: Install mysql-apt-config package non-interactively
+  ansible.builtin.apt:
+    deb: /tmp/mysql-apt-config.deb
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Update apt cache for MySQL repository
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Pre-seed MySQL root password debconf selections
+  ansible.builtin.debconf:
+    name: "{{ item.name }}"
+    question: "{{ item.question }}"
+    vtype: password
+    value: ""
+  loop:
+    - { name: 'mysql-server', question: 'mysql-server/root_password' }
+    - { name: 'mysql-server', question: 'mysql-server/root_password_again' }
+    - { name: 'mysql-community-server', question: 'mysql-community-server/root-pass' }
+    - { name: 'mysql-community-server', question: 'mysql-community-server/re-root-pass' }
+
+- name: Install MySQL server and python3-pymysql
+  ansible.builtin.apt:
+    name:
+      - mysql-server
+      - python3-pymysql
+    state: present
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Clean up mysql-apt-config deb package
+  ansible.builtin.file:
+    path: /tmp/mysql-apt-config.deb
+    state: absent
+
+# --- MySQL Service & Configuration ---
+- name: Set bind-address in MySQL configuration
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^#?\s*bind-address\s*='
+    line: "bind-address = {{ db_ip }}"
+    insertafter: '^\[mysqld\]'
+    state: present
+  notify: Restart mysql
+
+- name: Flush handlers to apply MySQL configuration immediately
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure MySQL service is enabled and started
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Create database
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    encoding: "{{ db_charset }}"
+    collation: "{{ db_collation }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create application user (least privilege)
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    host: "{{ web_ip }}"
+    password: "{{ db_password }}"
+    update_password: on_create
+    priv: "{{ db_name }}.*:{{ db_privileges }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  no_log: true
+
+- name: Copy schema.sql to the VM
+  ansible.builtin.copy:
+    src: "{{ db_schema_src }}"
+    dest: /tmp/schema.sql
+    mode: '0644'
+
+- name: Import schema.sql
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    encoding: "{{ db_charset }}"
+    state: import
+    target: /tmp/schema.sql
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Remove the temporary schema file
+  ansible.builtin.file:
+    path: /tmp/schema.sql
+    state: absent
