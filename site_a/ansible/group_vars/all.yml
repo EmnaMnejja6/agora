@@ -1,0 +1,75 @@
+---
+# Lab Network Configuration
+lan_network: 10.0.2.0/24
+lan_netmask: 255.255.255.0
+lan_gateway: 10.0.2.254
+enable_lan_gateway: false
+natnetwork_name: LAN-A
+lan_interface: eth1
+vagrant_nat_subnet: 10.99.99.0/24
+
+# Static IP Addresses
+db_ip: 10.0.2.8
+web_ip: 10.0.2.7
+ha1_ip: 10.0.2.5
+ha2_ip: 10.0.2.6
+
+lan_ips:
+  db: "{{ db_ip }}"
+  web: "{{ web_ip }}"
+  ha1: "{{ ha1_ip }}"
+  ha2: "{{ ha2_ip }}"
+
+node_ip: "{{ lan_ips[inventory_hostname] }}"
+
+# DNS Configuration
+dns:
+  - 1.1.1.1
+  - 8.8.8.8
+
+# Database Credentials & Settings
+db_name: siteA
+db_user: agora_app
+db_password: Agora!Database22
+db_charset: utf8mb4
+db_collation: utf8mb4_unicode_ci
+db_privileges: "SELECT,INSERT,UPDATE,DELETE"
+db_schema_src: "{{ playbook_dir }}/app/database/schema.sql"
+db_seed_src: "{{ playbook_dir }}/app/database/seed.sql"
+
+# Official MySQL APT Repository Package
+mysql_apt_config_url: https://repo.mysql.com/apt/debian/pool/mysql-apt-config/m/mysql-apt-config/mysql-apt-config_0.8.40-1_all.deb
+
+# Application (Flask)
+app_root: /opt/agora
+app_src: "{{ playbook_dir }}/app"
+app_frontend_src: "{{ playbook_dir }}/app/frontend/"
+app_backend_src: "{{ playbook_dir }}/app/backend/"
+app_user: agora
+app_backend_port: 5000
+app_wsgi: "app:app"              # module:object, adapt if the file is not app.py
+app_site_name: "Agora"
+app_secret_key: "Agora*web22"
+app_python_packages:
+  - flask
+  - pymysql
+  - cryptography                 # required by PyMySQL for MySQL 8 login (caching_sha2_password)
+  - gunicorn
+# High Availability (Keepalived & HAProxy) Settings
+vip: 10.0.2.100
+vip_prefix: 24
+vrrp_router_id: 51
+vrrp_password: azerty12
+
+ha_vrrp:
+  ha1:
+    state: MASTER
+    priority: 101
+    peer: "{{ ha2_ip }}"
+  ha2:
+    state: BACKUP
+    priority: 100
+    peer: "{{ ha1_ip }}"
+
+haproxy_backend_ip: "{{ web_ip }}"
+haproxy_backend_port: 80
