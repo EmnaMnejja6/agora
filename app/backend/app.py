@@ -272,8 +272,8 @@ def create_app() -> Flask:
                 poll = cursor.fetchone()
                 if poll is None:
                     abort(404)
-                cursor.execute("SELECT NOW() AS current_time")
-                now = cursor.fetchone()["current_time"]
+                cursor.execute("SELECT NOW() AS now_time")
+                now = cursor.fetchone()["now_time"]
                 if not poll_is_open(poll, now):
                     db.rollback()
                     flash("This poll isn't open for voting right now.", "error")
