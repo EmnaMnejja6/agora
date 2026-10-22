@@ -1,0 +1,4 @@
+# Managed by Ansible
+{% for server in dns %}
+nameserver {{ server }}
+{% endfor %}

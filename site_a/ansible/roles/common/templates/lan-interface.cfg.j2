@@ -1,0 +1,12 @@
+# Static IP configuration for LAN interface (VirtualBox NAT Network)
+auto {{ lan_interface }}
+iface {{ lan_interface }} inet static
+    address {{ node_ip }}
+    netmask {{ lan_netmask }}
+    metric 10
+{% if enable_lan_gateway | bool %}
+    gateway {{ lan_gateway }}
+{% endif %}
+{% if dns is defined and dns | length > 0 %}
+    dns-nameservers {{ dns | join(' ') }}
+{% endif %}
