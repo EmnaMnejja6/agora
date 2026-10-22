@@ -1,0 +1,10 @@
+- name: Restart agora
+  ansible.builtin.systemd:
+    name: agora
+    state: restarted
+    daemon_reload: true
+
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted

@@ -1,0 +1,104 @@
+- name: Install nginx and Python
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - python3
+      - python3-venv
+      - python3-pip
+      - curl
+    state: present
+    update_cache: true
+
+- name: Create the application system user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ app_root }}"
+    create_home: false
+
+- name: Create the application directory
+  ansible.builtin.file:
+    path: "{{ app_root }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+
+- name: Create the configuration directory
+  ansible.builtin.file:
+    path: /etc/agora
+    state: directory
+    owner: root
+    group: "{{ app_user }}"
+    mode: '0750'
+
+- name: Deploy backend code
+  ansible.builtin.copy:
+    src: "{{ app_src }}/backend/"
+    dest: "{{ app_root }}/backend/"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+    directory_mode: '0755'
+  notify: Restart agora
+
+- name: Deploy frontend (templates and static files)
+  ansible.builtin.copy:
+    src: "{{ app_src }}/frontend/"
+    dest: "{{ app_root }}/frontend/"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0644'
+    directory_mode: '0755'
+  notify: Restart agora
+
+- name: Install Python dependencies in a virtualenv
+  ansible.builtin.pip:
+    name: "{{ app_python_packages }}"
+    virtualenv: "{{ app_root }}/venv"
+    virtualenv_command: python3 -m venv
+  notify: Restart agora
+
+- name: Deploy environment file (secrets)
+  ansible.builtin.template:
+    src: agora.env.j2
+    dest: /etc/agora/agora.env
+    owner: root
+    group: "{{ app_user }}"
+    mode: '0640'
+  no_log: true
+  notify: Restart agora
+
+- name: Deploy systemd service
+  ansible.builtin.template:
+    src: agora.service.j2
+    dest: /etc/systemd/system/agora.service
+    mode: '0644'
+  notify: Restart agora
+
+- name: Configure the default Nginx site
+  ansible.builtin.template:
+    src: nginx-site.j2
+    dest: /etc/nginx/sites-available/default
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Ensure default Nginx site is enabled
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/default
+    dest: /etc/nginx/sites-enabled/default
+    state: link
+
+- name: Enable and start the application
+  ansible.builtin.systemd:
+    name: agora
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Enable and start Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true

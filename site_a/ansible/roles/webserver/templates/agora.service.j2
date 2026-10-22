@@ -1,0 +1,15 @@
+[Unit]
+Description=Agora (Flask with gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ app_user }}
+Group={{ app_user }}
+WorkingDirectory={{ app_root }}/backend
+EnvironmentFile=/etc/agora/agora.env
+ExecStart={{ app_root }}/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:{{ app_backend_port }} {{ app_wsgi }}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
