@@ -1,0 +1,30 @@
+---
+- name: Network configuration (all VMs)
+  hosts: all
+  become: true
+  roles:
+    - role: common
+      tags: [network]
+
+- name: MySQL
+  hosts: db
+  become: true
+  roles:
+    - role: mysql
+      tags: [mysql]
+
+- name: Web server
+  hosts: web
+  become: true
+  roles:
+    - role: webserver
+      tags: [web]
+
+- name: HAProxy and Keepalived
+  hosts: ha1:ha2
+  become: true
+  roles:
+    - role: haproxy
+      tags: [haproxy]
+    - role: keepalived
+      tags: [keepalived]
