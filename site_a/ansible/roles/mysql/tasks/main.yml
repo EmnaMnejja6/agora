@@ -3,6 +3,7 @@
   ansible.builtin.apt:
     name:
       - debconf
+      - debconf-utils
       - gnupg
       - lsb-release
       - curl
@@ -112,7 +113,24 @@
     target: /tmp/schema.sql
     login_unix_socket: /var/run/mysqld/mysqld.sock
 
-- name: Remove the temporary schema file
+- name: Copy seed.sql to the VM                      # NEW
+  ansible.builtin.copy:
+    src: "{{ db_seed_src }}"
+    dest: /tmp/seed.sql
+    mode: '0644'
+
+- name: Import seed.sql                              # NEW
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    encoding: "{{ db_charset }}"
+    state: import
+    target: /tmp/seed.sql
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Remove temporary SQL files                   # NEW
   ansible.builtin.file:
-    path: /tmp/schema.sql
+    path: "{{ item }}"
     state: absent
+  loop:
+    - /tmp/schema.sql
+    - /tmp/seed.sql
