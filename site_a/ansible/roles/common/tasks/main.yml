@@ -1,2 +1,24 @@
-- name: Configure network interface
-  ansible.builtin.include_tasks: tasks/network.yml
+- name: Ensure interfaces.d directory is sourced
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    line: "source /etc/network/interfaces.d/*"
+    state: present
+
+- name: Configure LAN network interface
+  ansible.builtin.template:
+    src: lan-interface.cfg.j2
+    dest: "/etc/network/interfaces.d/{{ lan_interface }}.cfg"
+    mode: '0644'
+
+- name: Apply LAN network interface configuration
+  ansible.builtin.shell: |
+    ifdown --force {{ lan_interface }} 2>/dev/null || true
+    ifup {{ lan_interface }}
+  register: ifup_result
+  changed_when: "'already configured' not in ifup_result.stderr"
+
+- name: Configure DNS nameservers
+  ansible.builtin.template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    mode: '0644'
