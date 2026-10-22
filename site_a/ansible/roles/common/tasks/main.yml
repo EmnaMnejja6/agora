@@ -1,0 +1,2 @@
+- name: Configure network interface
+  ansible.builtin.include_tasks: tasks/network.yml
