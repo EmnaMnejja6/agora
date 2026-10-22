@@ -18,5 +18,5 @@ frontend http_in
     default_backend web_servers
 
 backend web_servers
-    option httpchk GET /
+    option httpchk GET /health
     server web1 {{ haproxy_backend_ip }}:{{ haproxy_backend_port }} check inter 2s fall 3 rise 2
